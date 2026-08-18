@@ -8,6 +8,9 @@ assessment/
 # OS files
 .DS_Store
 
+# Generated data
+consultbae.db
+
 # Python
 __pycache__/
 *.py[cod]

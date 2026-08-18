@@ -1,0 +1,69 @@
+{
+    "name": "ConsultBae Duplicate Person Alert Workflow",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "incoming-applicant",
+          "options": {}
+        },
+        "name": "Webhook Trigger",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1,
+        "position": [250, 300]
+      },
+      {
+        "parameters": {
+          "url": "http://localhost:5002/check-duplicate",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"email\": \"{{ $json.body.email }}\",\n  \"phone\": \"{{ $json.body.phone }}\"\n}"
+        },
+        "name": "Check Duplicate in SQLite",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 3,
+        "position": [480, 300]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "boolean": [
+              {
+                "value1": "={{ $json.is_duplicate }}",
+                "value2": true
+              }
+            ]
+          }
+        },
+        "name": "Is Duplicate?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 1,
+        "position": [700, 300]
+      },
+      {
+        "parameters": {
+          "url": "https://webhook.site/demo-alert-endpoint",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"alert\": \"DUPLICATE DETECTED\",\n  \"candidate\": \"{{ $node['Check Duplicate in SQLite'].json.full_name }}\",\n  \"existing_sources\": \"{{ $node['Check Duplicate in SQLite'].json.data_sources }}\"\n}"
+        },
+        "name": "Trigger Duplicate Alert",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 3,
+        "position": [920, 200]
+      }
+    ],
+    "connections": {
+      "Webhook Trigger": {
+        "main": [[{ "node": "Check Duplicate in SQLite", "type": "main", "index": 0 }]]
+      },
+      "Check Duplicate in SQLite": {
+        "main": [[{ "node": "Is Duplicate?", "type": "main", "index": 0 }]]
+      },
+      "Is Duplicate?": {
+        "main": [
+          [{ "node": "Trigger Duplicate Alert", "type": "main", "index": 0 }]
+        ]
+      }
+    }
+  }
